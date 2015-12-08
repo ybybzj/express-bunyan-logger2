@@ -4,7 +4,7 @@ var bunyan = require('bunyan'),
     util = require('util'),
     Chalk = require('chalk').constructor,
     xtend = require('xtend');
-var defaultStyle = {
+var defaultStyles = {
     'remote-address': 'white',
     'user-agent': 'gray',
     'short-body': 'gray'
@@ -26,17 +26,20 @@ module.exports.errorLogger = function (opts) {
         genReqId = defaultGenReqId,
         levelFn = defaultLevelFn,
         includesFn,
-        chalk = new Chalk({enabled: !!opts.color}),
-        style = xtend(defaultStyle, opts.style),
-        clr = function(name){
+        colorEnabled = !!opts.color,
+        chalk = new Chalk({enabled: colorEnabled}),
+        styles = xtend(defaultStyles, Object(opts.color)===opts.color ? opts.color : null),
+        clr = function(name, meta){
             return function(str){
-                var styleFn = style[name];
-                return styleFn ? chalk[styleFn](str) : str;
+                if(!colorEnabled) return str;
+                var style = styles[name],
+                    styleFn = typeof style === 'function' ? chalk[style(meta[name])] : chalk[style];
+
+                return typeof styleFn === 'function' ? styleFn(str) : str;
             };
         };
 
     delete opts.color;
-    delete opts.style;
     
     if (opts.logger) {
       logger = opts.logger;
@@ -192,7 +195,7 @@ function filterExcludes(meta, excludes){
 function compile(fmt, clr) {
     return function(meta){
         return fmt.replace(/:([-\w]{2,})(?:\[([^\]]+)\])?/g, function(_, name, key){
-            var c = clr(name);
+            var c = clr(name, meta);
             if (key){
                 return c(meta[name] ? (meta[name][key] || (typeof meta[name][key] === 'number'? '0' : '-')) : '-');
             }
