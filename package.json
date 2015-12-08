@@ -1,7 +1,7 @@
 {
-  "name": "express-bunyan-logger",
-  "version": "1.2.0",
-  "description": "a bunyan logger middleware for express",
+  "name": "express-bunyan-logger2",
+  "version": "1.0.0",
+  "description": "a fork of express-bunyan-logger",
   "main": "index.js",
   "scripts": {
     "lint": "./node_modules/.bin/jshint index.js test/*.js",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/villadora/express-bunyan-logger.git"
+    "url": "https://github.com/ybybzj/express-bunyan-logger2.git"
   },
   "keywords": [
     "express",
@@ -17,9 +17,11 @@
     "bunyan"
   ],
   "dependencies": {
-    "bunyan": "^1.0.0",
+    "bunyan": "^1.5.1",
+    "chalk": "^1.1.1",
     "node-uuid": "^1.4.1",
-    "useragent": "^2.0.9"
+    "useragent": "^2.0.9",
+    "xtend": "^4.0.1"
   },
   "devDependencies": {
     "express": "4.x",
@@ -30,14 +32,8 @@
   },
   "readmeFilename": "README.md",
   "author": {
-    "name": "wei.gao",
-    "email": "jky239@gmail.com"
+    "name": "jackzj",
+    "email": "ybybzj@gmail.com"
   },
-  "contributors": [
-    "Wei Gao <jky239@gmail.com>",
-    "Paris Holley <mail@parisholley.com>",
-    "Ognian Tschakalov <ognian.tschakalov@ogi-it.com>",
-    "Simon Wade <simon.wade@gmail.com>"
-  ],
-  "license": "BSD"
+  "license": "MIT"
 }

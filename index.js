@@ -1,8 +1,14 @@
 var bunyan = require('bunyan'),
     useragent = require('useragent'),
     uuid = require('node-uuid'),
-    util = require('util');
-
+    util = require('util'),
+    Chalk = require('chalk').constructor,
+    xtend = require('xtend');
+var defaultStyle = {
+    'remote-address': 'white',
+    'user-agent': 'gray',
+    'short-body': 'gray'
+};
 
 module.exports = function (opts) {
     var logger = module.exports.errorLogger(opts);
@@ -19,8 +25,19 @@ module.exports.errorLogger = function (opts) {
         excludes,
         genReqId = defaultGenReqId,
         levelFn = defaultLevelFn,
-        includesFn;
+        includesFn,
+        chalk = new Chalk({enabled: !!opts.color}),
+        style = xtend(defaultStyle, opts.style),
+        clr = function(name){
+            return function(str){
+                var styleFn = style[name];
+                return styleFn ? chalk[styleFn](str) : str;
+            };
+        };
 
+    delete opts.color;
+    delete opts.style;
+    
     if (opts.logger) {
       logger = opts.logger;
     }
@@ -28,7 +45,7 @@ module.exports.errorLogger = function (opts) {
     // default format 
     format = opts.format || ":remote-address :incoming :method :url HTTP/:http-version :status-code :res-headers[content-length] :referer :user-agent[family] :user-agent[major].:user-agent[minor] :user-agent[os] :response-time ms";
     delete opts.format; // don't pass it to bunyan
-    (typeof format != 'function') && (format = compile(format));
+    (typeof format != 'function') && (format = compile(format, clr));
 
     opts.hasOwnProperty('parseUA') && (parseUA = opts.parseUA, delete opts.parseUA);
 
@@ -42,10 +59,10 @@ module.exports.errorLogger = function (opts) {
         delete opts.levelFn;
     }
 
-    if (opts.excludes) {
-        excludes = opts.excludes;
-        delete opts.excludes;
-    }
+    
+    excludes = [].concat(opts.excludes).filter(Boolean);
+    delete opts.excludes;
+    
 
     if (opts.includesFn) {
         includesFn = opts.includesFn;
@@ -127,21 +144,7 @@ module.exports.errorLogger = function (opts) {
             var level = levelFn(status, err, meta);
             logFn = childLogger[level] ? childLogger[level] : childLogger.info;
 
-            var json = meta;
-            if (excludes) {
-                json = null;
-                if (!~excludes.indexOf('*')) {
-                    json = {};
-                    var exs = {};
-                    excludes.forEach(function(ex) {
-                        exs[ex] = true;
-                    });
-                  
-                    for (var p in meta) 
-                        if (!exs[p])
-                          json[p] = meta[p];
-                }
-            }
+            var json = filterExcludes(meta, excludes);
 
             if (includesFn) {
                 var includes = includesFn(req, res);
@@ -153,7 +156,7 @@ module.exports.errorLogger = function (opts) {
                 }
             }
 
-            if (!json) {
+            if (!Object.keys(json).length) {
                 logFn.call(childLogger, format(meta));
             } else {
                 logFn.call(childLogger, json, format(meta));
@@ -172,15 +175,30 @@ module.exports.errorLogger = function (opts) {
     };
 };
 
-
-function compile(fmt) {
-    fmt = fmt.replace(/"/g, '\\"');
-    var js = '  return "' + fmt.replace(/:([-\w]{2,})(?:\[([^\]]+)\])?/g, function (_, name, arg) {
-        if (arg)
-            return '"\n + (meta["' + name + '"] ? (meta["' + name + '"]["' + arg + '"]|| (typeof meta["' + name + '"]["' + arg + '"] === "number"?"0": "-")) : "-") + "';
-        return '"\n    + ((meta["' + name + '"]) || (typeof meta["'+name+'"] === "number"?"0": "-")) + "';
-    }) + '";';
-    return new Function('meta', js);
+function filterExcludes(meta, excludes){
+    var i = excludes.indexOf('*'), l = excludes.length, e, result = xtend({}, meta);
+    if(i !== -1) result = {};
+    for(i = i+1; i < l; i++){
+        e = excludes[i];
+        if(e[0] === '!'){
+            e = e.slice(1);
+            result[e] = meta[e];
+        }else{
+            delete result[e];
+        }
+    }
+    return result;
+}
+function compile(fmt, clr) {
+    return function(meta){
+        return fmt.replace(/:([-\w]{2,})(?:\[([^\]]+)\])?/g, function(_, name, key){
+            var c = clr(name);
+            if (key){
+                return c(meta[name] ? (meta[name][key] || (typeof meta[name][key] === 'number'? '0' : '-')) : '-');
+            }
+            return c(meta[name] || (typeof meta[name] === 'number'? '0' : '-'));
+        });
+    };
 }
 
 
