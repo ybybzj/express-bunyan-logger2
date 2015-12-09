@@ -6,8 +6,11 @@ var bunyan = require('bunyan'),
     xtend = require('xtend');
 var defaultStyles = {
     'remote-address': 'white',
-    'user-agent': 'gray',
-    'short-body': 'gray'
+    'user-agent': 'yellow',
+    'status-code': 'cyan',
+    'response-time': 'green',
+    'short-body': 'gray',
+    'body': 'gray'
 };
 
 module.exports = function (opts) {
