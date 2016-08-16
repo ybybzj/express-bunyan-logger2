@@ -1,6 +1,6 @@
 {
   "name": "express-bunyan-logger2",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "a fork of express-bunyan-logger",
   "main": "index.js",
   "scripts": {
