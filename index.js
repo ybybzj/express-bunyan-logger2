@@ -26,6 +26,7 @@ module.exports.errorLogger = function (opts) {
         immediate = false,
         parseUA = true,
         excludes,
+        valueMappings,
         genReqId = defaultGenReqId,
         levelFn = defaultLevelFn,
         includesFn,
@@ -65,6 +66,11 @@ module.exports.errorLogger = function (opts) {
         delete opts.levelFn;
     }
 
+    if(opts.valueMappingFn){
+      valueMappingFn = opts.valueMappingFn;
+      delete opts.valueMappingFn;
+    }
+
     
     excludes = [].concat(opts.excludes).filter(Boolean);
     delete opts.excludes;
@@ -84,8 +90,11 @@ module.exports.errorLogger = function (opts) {
 
     return function (err, req, res, next) {
         var startTime = process.hrtime();
-
+        
         var app = req.app || res.app;
+
+        var valueMappings;
+
 
         if (!logger) {
             opts.name = (opts.name || app.settings.shortname || app.settings.name || app.settings.title || 'express');
@@ -100,6 +109,10 @@ module.exports.errorLogger = function (opts) {
 
         if (genReqId) 
           requestId = genReqId(req);
+
+        if(valueMappingFn){
+          valueMappings = valueMappingFn(req, res);
+        }
 
         var childLogger = requestId !== undefined ? logger.child({req_id: requestId}) : logger;
         req.log = childLogger;
@@ -145,6 +158,9 @@ module.exports.errorLogger = function (opts) {
                 'incoming':incoming?'-->':'<--'
             };
 
+            if(valueMappings){
+              meta = xtend({}, meta, valueMappings); 
+            }
             err && (meta.err = err);
 
             var level = levelFn(status, err, meta);
