@@ -110,10 +110,6 @@ module.exports.errorLogger = function (opts) {
         if (genReqId) 
           requestId = genReqId(req);
 
-        if(valueMappingFn){
-          valueMappings = valueMappingFn(req, res);
-        }
-
         var childLogger = requestId !== undefined ? logger.child({req_id: requestId}) : logger;
         req.log = childLogger;
 
@@ -158,8 +154,8 @@ module.exports.errorLogger = function (opts) {
                 'incoming':incoming?'-->':'<--'
             };
 
-            if(valueMappings){
-              meta = xtend({}, meta, valueMappings); 
+            if(valueMappingFn){
+              meta = xtend({}, meta, valueMappingFn(req, res)); 
             }
             err && (meta.err = err);
 
