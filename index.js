@@ -26,7 +26,7 @@ module.exports.errorLogger = function (opts) {
         immediate = false,
         parseUA = true,
         excludes,
-        valueMappings,
+        valueMappingFn,
         genReqId = defaultGenReqId,
         levelFn = defaultLevelFn,
         includesFn,
